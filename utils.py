@@ -102,3 +102,10 @@ def load_text(txt_path):
     segments = [x for x in segments if x not in ['\n', '']]   # flatten list
     segments = [segment + '.' for segment in segments]   # add . to the end of stences
     return segments
+
+
+def write_list_to_file(lst, filename):
+    with open(filename, 'w') as file:
+        for item in lst:
+            file.write(str(item) + '\n')
+

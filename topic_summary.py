@@ -14,9 +14,9 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
 import os
-
+from utils import write_list_to_file
 class TopicSummarizer:
-    def __init__(self, api_key, ric):
+    def __init__(self, api_key, ric=None):
         self.api_key = api_key
         # Initialize models here, replace 'YourModel' with the actual model classes
         self.llm3 = ChatOpenAI(temperature=0,
@@ -34,6 +34,7 @@ class TopicSummarizer:
         self.ric = ric
         self.docs = None
         self.vectordb = None
+
 
     def prepare_data(self, data, chunk_size=1500, chunk_overlap=150):
         # Load and prepare the data for topic extraction
@@ -78,7 +79,7 @@ class TopicSummarizer:
 
     def create_vectordb(self):
         openai_embed = OpenAIEmbeddings(openai_api_key=self.api_key)
-        persist_directory = 'docs/chroma/'+self.ric +'/'
+        persist_directory = 'docs/chroma/'
         if os.path.exists(persist_directory):
             self.vectordb = Chroma(persist_directory=persist_directory, embedding_function=openai_embed)
         else:
@@ -95,11 +96,16 @@ class TopicSummarizer:
         # Retrieve and display information for specific topics
         question = "please summarize {} related information".format(topic)
         if retrievefirst:
-            subset = self.vectordb.similarity_search(fetch_topic, k=3)
+            subset = self.vectordb.similarity_search(fetch_topic,
+                                                     k=3,
+                                                     filter={'company': 'Apple'})
+
             chain = load_qa_chain(self.llm3, chain_type="stuff")
             output = chain.run(input_documents=subset, question=question)
         else:
-            qa_chain = RetrievalQA.from_chain_type(self.llm3, retriever=self.vectordb.as_retriever())
+            qa_chain = RetrievalQA.from_chain_type(self.llm3,
+                                                   retriever=self.vectordb.as_retriever(),
+                                                   )
             output = qa_chain({"query": question})
         return output
 
@@ -125,18 +131,24 @@ class TopicSummarizer:
         return True
 
     def simple_question(self, pred_prompt, topic=None):
+        #
         pred_prompt_template = PromptTemplate(template=pred_prompt, input_variables=["text"])
         pred_llm_chain = LLMChain(llm=self.llm3, prompt=pred_prompt_template)
         output_list = [pred_llm_chain.run(x.page_content) for x in self.docs]
         select = [True if 'yes' in x.lower() else False for x in output_list]
         subset = [item for item, mask in zip(self.docs, select) if mask]
         print(len(subset))
+        print([x for x in subset])
+        file_name = 'output.txt'
+        write_list_to_file(subset, file_name)
         #print(subset)
         if topic:
-            #question = "please write a summary (5 sentences or less) about {}. Do not respond with information that isn't relevant to the topic that the user gives you".format(topic)
-            question = "please summarize {} related information, use bulline points".format(topic)
-
-            chain = load_qa_chain(self.llm3, chain_type="stuff")
-            output = chain.run(input_documents=subset, question=question)
+            if len(subset)>0:
+                question = "please write a summary (5 sentences or less) about {}. Do not respond with information that isn't relevant to the topic that the user gives you".format(topic)
+                #question = "please summarize {} related information, use bulline points".format(topic)
+                chain = load_qa_chain(self.llm3, chain_type="stuff")
+                output = chain.run(input_documents=subset, question=question)
+            else:
+                output = 'This is no {} related information'.format(topic)
             print(output)
         return True

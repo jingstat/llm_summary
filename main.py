@@ -33,26 +33,48 @@ from prompts import (
 from topic_summary import TopicSummarizer
 from dotenv import load_dotenv
 from utils import load_text, create_sentences, create_chunks
+from langchain.document_loaders import DirectoryLoader, TextLoader
+
+
 def main():
     load_dotenv()
     api_key = os.getenv('OPENAI_API_KEY')
-    topsummarizer = TopicSummarizer(api_key, 'appl')
-    txt_filepath = 'data/amzn_earningtrans.txt' #'data/AAPL_Q2_2023.txt' #'amzn_earningtrans.txt'
-    segments = load_text(txt_filepath)
-    sentences = create_sentences(segments, MIN_WORDS=20, MAX_WORDS=100)
-    chunks = create_chunks(sentences, CHUNK_LENGTH=5, STRIDE=1)
-    chunks_text = [chunk['text'] for chunk in chunks]
-    print(len(chunks_text))
-    docs = topsummarizer.prepare_data(data=chunks_text, chunk_size=1500, chunk_overlap=150)
-    print(docs[0])
+    # create docs file from all companies
+    loader = DirectoryLoader('./data/', glob="*.txt", loader_cls=TextLoader)
+    docs = loader.load()
+    # add metadata for company and industry
+    industry = ['IT', 'IT']
+    company = ['Amazon', 'Apple']
+    for i, doc in enumerate(docs):
+        doc.metadata['industry'] = industry[i]
+        doc.metadata['company'] = company[i]
 
+    # prepare chunks
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=800,
+        chunk_overlap=0
+    )
+    splits = text_splitter.split_documents(docs)
+    len(splits)
+
+    topsummarizer = TopicSummarizer(api_key)
+    topsummarizer.docs = splits
+    print(len(splits))
+    # --- if not using embedding and only for one company
+    _company = [x for x in splits if x.metadata['company'] == 'Amazon']
+    topsummarizer.docs = _company
+    topsummarizer.simple_question(PRED_PROMPT_CONSUEMR_SPENDING, topic='consumer spending')
     # topic_found = topsummarizer.extract_topics(TOPIC_PROMPT_MAP_TEMPLATE,
     #                                            TOPIC_PROMPT_COMBINE_TEMPLATE,
     #                                            structured=True,
     #                                            schema=TOPIC_SCHEMA)
-    #print(topic_found)
+    # topics= pd.DataFrame(topic_found)
+    # topics.to_csv('amazon.csv')
+    # --- The end
+
+    # --- If using vector db
     # Create Vector db first time or load if exists
-    topsummarizer.create_vectordb()
+    # topsummarizer.create_vectordb()
     #topsummarizer.vectordb = Chroma.load('docs/chroma/appl/')
     # prompt = 'find a consumer spending related information, like consumer confidence, affordability'
     # summary = topsummarizer.retrieve_information(topic='Consumer Spending',
@@ -63,7 +85,6 @@ def main():
     #                                       topics=['consumer spending and confidence', 'labor cost'],
     #                                       verbose=True)
 
-    topsummarizer.simple_question(PRED_PROMPT_LABOR_COST, topic='labor cost')
 
 if __name__ == '__main__':
     main()

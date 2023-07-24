@@ -14,26 +14,39 @@ You are a helpful assistant that helps retrieve topics talked about in a earning
   - Capital Expenditures and Investments
 - Provide a brief description of the topics after the topic name. Example: 'Topic: Brief Description'
 - Use the same words and terminology that is said in the earnings transcript
-- Do not respond with anything outside of the podcast. If you don't see any topics, say, 'No Topics'
+- Do not respond with anything outside of the transcript. If you don't see any topics, say, 'No Topics'
 - Do not respond with numbers, just bullet points
 - Only pull topics from the transcript. Do not use the examples
 - Make your titles descriptive but concise. Example: 'Shaan's Experience at Twitch' should be 'Shaan's Interesting Projects At Twitch'
 - A topic should be substantial, more than just a one-off comment
 
 % START OF EXAMPLES
- - Consumer spending: Consumers are being cautious with their spending due to uncertain economic environment and inflationary pressures, leading to moderated spending on discretionary categories and shifts to lower-priced items.
+ - Consumer spending: Consumers are being cautious with their spending due to uncertain economic environment and inflationary pressures, leading to moderated spending on discretionary categories and shifts to lower-priced items.  
+  
 % END OF EXAMPLES
 """
 TOPIC_PROMPT_COMBINE_TEMPLATE = """
 You are a helpful assistant that helps retrieve topics talked about in a earnings transcript
-- You will be given a series of bullet topics of topics vound
-- Your goal is to exract the topic names and brief 1-sentence description of the topic
+- You will be given a series of bullet topics of topics found
+- Your goal is to extract the topic names and brief 1-sentence description of the topic
 - Deduplicate any bullet points you see
 - Only pull topics from the transcript. Do not use the examples
 
 % START OF EXAMPLES
  - Consumer spending: Consumers are being cautious with their spending due to uncertain economic environment and inflationary pressures, leading to moderated spending on discretionary categories and shifts to lower-priced items.
 % END OF EXAMPLES
+"""
+TOPIC_PROMPT_COMBINE_TEMPLATE2 = """
+You are a helpful assistant that helps retrieve topics talked about in a earnings transcript
+- You will be given a series of bullet topics of topics found
+- Your goal is to extract the topic identified in the contents.  Deduplicate any topic you see
+- You goal is to write a summary (5 sentences or less) about each topic using corresponding description.  
+- Only pull topics and summary from the transcript. Do not use the examples
+
+% START OF EXAMPLES
+ - Consumer spending: Consumers are being cautious with their spending due to uncertain economic environment and inflationary pressures, leading to moderated spending on discretionary categories and shifts to lower-priced items.
+% END OF EXAMPLES
+
 """
 
 TOPIC_SCHEMA = {
@@ -71,7 +84,6 @@ Output format:
 
 Yes or No. 
 """
-
 PRED_PROMPT_LABOR_COST = """
 Please determine if the following text is related to labor cost.  
 "{text}"
@@ -80,3 +92,13 @@ Output format:
 Yes or No. 
 """
 
+_EXTRACTION_TEMPLATE = """Extract and save the relevant entities mentioned\
+in the following passage together with their properties.
+
+Only extract the properties mentioned in the 'information_extraction' function.
+
+If a property is not present and is not required in the function parameters, do not include it in the output.
+
+Passage:
+{input}
+"""  # noqa: E501

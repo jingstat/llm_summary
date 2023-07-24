@@ -51,8 +51,8 @@ def main():
 
     # prepare chunks
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=800,
-        chunk_overlap=0
+        chunk_size=1500,
+        chunk_overlap=150
     )
     splits = text_splitter.split_documents(docs)
     len(splits)
@@ -64,12 +64,12 @@ def main():
     _company = [x for x in splits if x.metadata['company'] == 'Amazon']
     topsummarizer.docs = _company
     topsummarizer.simple_question(PRED_PROMPT_CONSUEMR_SPENDING, topic='consumer spending')
-    # topic_found = topsummarizer.extract_topics(TOPIC_PROMPT_MAP_TEMPLATE,
-    #                                            TOPIC_PROMPT_COMBINE_TEMPLATE,
-    #                                            structured=True,
-    #                                            schema=TOPIC_SCHEMA)
-    # topics= pd.DataFrame(topic_found)
-    # topics.to_csv('amazon.csv')
+    topic_found = topsummarizer.extract_topics(TOPIC_PROMPT_MAP_TEMPLATE,
+                                               TOPIC_PROMPT_COMBINE_TEMPLATE,
+                                               structured=False,
+                                               schema=TOPIC_SCHEMA)
+    topics= pd.DataFrame(topic_found)
+    topics.to_csv('amazon.csv')
     # --- The end
 
     # --- If using vector db

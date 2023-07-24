@@ -28,29 +28,15 @@ load_dotenv()
 openai.api_key =os.getenv('OPENAI_API_KEY')
 testsummary = Summarizer()
 
+st.sidebar.header("Load Data")
+data_path = st.sidebar.text_input("Enter the path to your data file")
 
 # Check if path is not empty
 st.header("Earnings Transcript Summarization:books:")
 
-@st.cache_data
-def load_data(data_path):
-    docs = testsummary.prepare_data_from_files(data_path)
-    return docs
-
-# Sidebar for data upload
-st.sidebar.header("Load Data")
-data_path = st.sidebar.text_input("Enter the path to your data file")
-
-# Sidebar for summarizaton argument
-st.sidebar.header("Summarization")
-summary_method = st.sidebar.selectbox("Choose a method", ['Auto', 'Topic'])
-if summary_method == 'Topic':
-    topic = st.sidebar.text_input("Enter the topic")
-
-
 if data_path:
     try:
-        docs = load_data(data_path)
+        docs = testsummary.prepare_data_from_files(data_path)
         print('load raw data {}'.format(len(docs)))
         st.sidebar.success("Data loaded successfully")
 
@@ -59,19 +45,28 @@ if data_path:
         company_list = list(set([x.metadata['company'] for x in docs]))
         col_to_filter = st.sidebar.selectbox("Choose a company", company_list)
         print(col_to_filter)
-        if st.sidebar.button('summary'):
+        #value_to_filter = st.sidebar.text_input("Enter the value to filter")
+        # Filter button
+        if st.sidebar.button('Filter Data'):
             subdocs = [x for x in docs if col_to_filter in x.metadata['company']]
             if 'subdocs' in locals():
                 st.write(subdocs[0])
-                if summary_method == 'Auto':
-                    st.write('Generating an auto summary:')
-                    _,_,summary = testsummary.doc_summary(TOPIC_PROMPT_MAP_TEMPLATE, TOPIC_PROMPT_COMBINE_TEMPLATE2,
-                                                       mydocs=subdocs)
-                    st.write("Results:", summary)
-                if summary_method == 'Topic':
-                    st.write("Generating {} summary".format(topic))
-                    _, output = testsummary.topic_extract_summary(PRED_PROMPT_CONSUEMR_SPENDING, topic, mydocs=subdocs)
-                    st.write("topic_summary:", output)
+
+            st.sidebar.success("Data filtered successfully")
+            if st.button('Summarization'):
+                a, b, c = testsummary.doc_summary(TOPIC_PROMPT_MAP_TEMPLATE, TOPIC_PROMPT_COMBINE_TEMPLATE2,
+                                                  mydocs=subdocs[:5])
+
+            prompt = st.text_input("Enter a prompt")
+            #prompt = 'consumer spending'
+            if prompt:
+                print('...........summaring {}'.format(prompt))
+                print(subdocs[1])
+                _, output = testsummary.topic_extract_summary(PRED_PROMPT_CONSUEMR_SPENDING, prompt, mydocs=subdocs)
+                print('<<<< results')
+                print(output)
+                if output:
+                    st.write(output)
 
     except FileNotFoundError:
         st.sidebar.error("File not found. Please check the path and try again")

@@ -124,7 +124,7 @@ class TopicSummarizer:
                                              'prompt': CHAT_PROMPT
                                          })
         for topic in topics:
-            question = "please summarize {} reltated information".format(topic)
+            question = "please summarize {} related information".format(topic)
             expanded_topic = qa.run(question)
             print(expanded_topic)
             print("\n\n")
@@ -148,6 +148,7 @@ class TopicSummarizer:
                 #question = "please summarize {} related information, use bulline points".format(topic)
                 chain = load_qa_chain(self.llm3, chain_type="stuff")
                 output = chain.run(input_documents=subset, question=question)
+                write_list_to_file([output], 'amazon_summary.txt')
             else:
                 output = 'This is no {} related information'.format(topic)
             print(output)

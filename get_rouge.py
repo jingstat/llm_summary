@@ -1,6 +1,6 @@
 import json
 from rouge import Rouge
-from rouge import FileRouge
+from rouge import FilesRouge
 
 def score_two_files(hyp_path, ref_path, avg_score = 0):
     """
@@ -9,12 +9,13 @@ def score_two_files(hyp_path, ref_path, avg_score = 0):
     :param avg_score:
     :return:
     """
-    files_rouge = FileRouge()
+    files_rouge = FilesRouge()
     if avg_score:
-        scores = files_rouge.get_scores(hyp_path,ref_path, avg=True)
+        scores = files_rouge.get_scores(hyp_path, ref_path, avg=True)
     else:
         scores = files_rouge.get_scores(hyp_path, ref_path)
     return scores
 
-
-score_two_files('./data/amzn_earningtrans.txt', './data2/AAPL_Q2_2023.txt', 0)
+file1 = './output1.txt'
+file2 = './output.txt'
+score_two_files(file1, file2, 0)
